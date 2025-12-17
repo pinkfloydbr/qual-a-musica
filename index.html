@@ -325,8 +325,8 @@ const songs = [
 
     function copiarResultado() {
         const grid = attemptsHistory.join("\n");
-        const texto = `Joguei FLOYDLE (${dateStr})\nTentativas: ${attemptsHistory.length}\n${grid}\nPontuação: ${currentScore}\nConsegue bater meu recorde?\nJogue aqui: ${window.location.href}`;
-        
+        const texto = `Pink Floyd - Qual é a música?\n${window.location.href}\nMúsica do dia ${dateStr}\nTentativas: ${attemptsHistory.length}\n${grid}\nPontuação: ${currentScore}\nConsegue bater meu recorde?`;
+
         navigator.clipboard.writeText(texto).then(() => {
             const btn = document.getElementById('shareBtn');
             const originalText = btn.innerText;
