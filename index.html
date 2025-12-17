@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Pink Floyd - Qual é a música?</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --card: #111;
+            --green: #2ecc71;
+            --red: #e74c3c;
+            --gold: #f1c40f;
+            --rainbow: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg); color: white; text-align: center; margin: 0; padding: 20px;
+        }
+
+        .rainbow-bar { height: 4px; width: 100%; background: var(--rainbow); position: fixed; top: 0; left: 0; z-index: 1000; }
+        .container { max-width: 800px; margin: 40px auto; }
+        
+        .panel {
+            background: #1a1a1a; padding: 15px; border-radius: 10px;
+            display: inline-block; margin-bottom: 20px; border: 1px solid #333;
+        }
+        
+        #scoreValue { color: var(--gold); font-size: 1.5rem; font-weight: bold; }
+
+        input {
+            width: 100%; padding: 15px; background: #0a0a0a; border: 2px solid #333;
+            color: white; border-radius: 8px; font-size: 1.1rem; margin-bottom: 20px; outline: none;
+        }
+
+        /* Botões */
+        .btn {
+            background: transparent; border: 1px solid var(--green); color: var(--green);
+            padding: 12px 25px; border-radius: 5px; cursor: pointer; margin: 10px; font-weight: bold;
+            transition: 0.3s; display: none;
+        }
+        .btn:hover { background: var(--green); color: black; }
+
+        /* Tabela de Resultados */
+        .row { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .box { background: var(--card); padding: 12px 5px; border-radius: 4px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+        
+        .header-row div { font-size: 0.65rem; color: #777; text-transform: uppercase; padding-bottom: 5px; }
+        .correct { background: var(--green) !important; color: black; font-weight: bold; }
+        .wrong { background: var(--red) !important; }
+        
+        .victory { color: var(--green); font-size: 2.5rem; letter-spacing: 5px; animation: pulse 1s infinite; margin-top: 10px; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="rainbow-bar"></div>
+
+<div class="container">
+    <h1 id="mainTitle">Uma música por dia</h1>
+    <p id="dateDisplay" style="color: #666; margin-top: -10px; margin-bottom: 20px;"></p>
+    
+    <div class="panel">
+        PONTOS: <span id="scoreValue">1000</span>
+    </div>
+    <br>
+
+    <div id="controls">
+        <button class="btn" id="shareBtn" onclick="copiarResultado()">📋 Copiar Resultado</button>
+    </div>
+
+    <div id="gameInputArea">
+        <input type="text" id="guessInput" list="songsList" placeholder="Tente a música do dia..." oninput="checkInput()">
+        <datalist id="songsList"></datalist>
+    </div>
+
+    <div class="row header-row">
+        <div>Música</div><div>Álbum</div><div>Ano</div><div>Faixa</div><div>Duração</div>
+    </div>
+    <div id="results"></div>
+</div>
+
+<script>
+const songs = [
+    // Sua lista completa de músicas permanece aqui (Piper at the Gates até Endless River)
+    { name: "Astronomy Domine", album: "The Piper at the Gates of Dawn", year: 1967, track: 1, duration: 252 },
+    { name: "Lucifer Sam", album: "The Piper at the Gates of Dawn", year: 1967, track: 2, duration: 177 },
+    { name: "Matilda Mother", album: "The Piper at the Gates of Dawn", year: 1967, track: 3, duration: 226 },
+    { name: "Flaming", album: "The Piper at the Gates of Dawn", year: 1967, track: 4, duration: 193 },
+    { name: "Pow R. Toc H.", album: "The Piper at the Gates of Dawn", year: 1967, track: 5, duration: 134 },
+    { name: "Take Up Thy Stethoscope and Walk", album: "The Piper at the Gates of Dawn", year: 1967, track: 6, duration: 192 },
+    { name: "Interstellar Overdrive", album: "The Piper at the Gates of Dawn", year: 1967, track: 7, duration: 541 },
+    { name: "The Gnome", album: "The Piper at the Gates of Dawn", year: 1967, track: 8, duration: 493 },
+    { name: "Chapter 24", album: "The Piper at the Gates of Dawn", year: 1967, track: 9, duration: 204 },
+    { name: "The Scarecrow", album: "The Piper at the Gates of Dawn", year: 1967, track: 10, duration: 611 },
+    { name: "Bike", album: "The Piper at the Gates of Dawn", year: 1967, track: 11, duration: 201 },
+    { name: "Let There Be More Light", album: "A Saucerful of Secrets", year: 1968, track: 1, duration: 278 },
+    { name: "Remember a Day", album: "A Saucerful of Secrets", year: 1968, track: 2, duration: 200 },
+    { name: "Set the Controls for the Heart of the Sun", album: "A Saucerful of Secrets", year: 1968, track: 3, duration: 312 },
+    { name: "Corporal Clegg", album: "A Saucerful of Secrets", year: 1968, track: 4, duration: 182 },
+    { name: "A Saucerful of Secrets", album: "A Saucerful of Secrets", year: 1968, track: 5, duration: 142 },
+    { name: "See-Saw", album: "A Saucerful of Secrets", year: 1968, track: 6, duration: 207 },
+    { name: "Jugband Blues", album: "A Saucerful of Secrets", year: 1968, track: 7, duration: 247 },
+    { name: "Cirrus Minor", album: "More (1969)", year: 1969, track: 1, duration: 318 },
+    { name: "The Nile Song", album: "More (1969)", year: 1969, track: 2, duration: 206 },
+    { name: "Crying Song", album: "More (1969)", year: 1969, track: 3, duration: 213 },
+    { name: "Up the Khyber", album: "More (1969)", year: 1969, track: 4, duration: 132 },
+    { name: "Green Is the Colour", album: "More (1969)", year: 1969, track: 5, duration: 178 },
+    { name: "Cymbaline", album: "More (1969)", year: 1969, track: 6, duration: 290 },
+    { name: "Party Sequence", album: "More (1969)", year: 1969, track: 7, duration: 67 },
+    { name: "Main Theme", album: "More (1969)", year: 1969, track: 8, duration: 328 },
+    { name: "Ibiza Bar", album: "More (1969)", year: 1969, track: 9, duration: 199 },
+    { name: "More Blues", album: "More (1969)", year: 1969, track: 10, duration: 132 },
+    { name: "Quicksilver", album: "More (1969)", year: 1969, track: 11, duration: 439 },
+    { name: "A Spanish Piece", album: "More (1969)", year: 1969, track: 12, duration: 65 },
+    { name: "Dramatic Theme", album: "More (1969)", year: 1969, track: 13, duration: 135 },
+    { name: "Astronomy Domine", album: "Ummagumma", year: 1969, track: 1, duration: 505 },
+    { name: "Careful with That Axe, Eugene", album: "Ummagumma", year: 1969, track: 2, duration: 527 },
+    { name: "Set the Controls for the Heart of the Sun", album: "Ummagumma", year: 1969, track: 3, duration: 561 },
+    { name: "A Saucerful of Secrets", album: "Ummagumma", year: 1969, track: 4, duration: 771 },
+    { name: "Sysyphus", album: "Ummagumma", year: 1969, track: 5, duration: 812 },
+    { name: "Grantchester Meadows", album: "Ummagumma", year: 1969, track: 6, duration: 443 },
+    { name: "Several Species of Small Furry Animals Gathered Together in a Cave and Grooving with a Pict", album: "Ummagumma", year: 1969, track: 7, duration: 287 },
+    { name: "The Narrow Way", album: "Ummagumma", year: 1969, track: 8, duration: 734 },
+    { name: "The Grand Vizier's Garden Party", album: "Ummagumma", year: 1969, track: 9, duration: 535 },    
+    { name: "Atom Heart Mother", album: "Atom Heart Mother", year: 1970, track: 1, duration: 1074 },
+    { name: "If", album: "Atom Heart Mother", year: 1970, track: 2, duration: 1221 },
+    { name: "Summer '68", album: "Atom Heart Mother", year: 1970, track: 3, duration: 174 },
+    { name: "Fat Old Sun", album: "Atom Heart Mother", year: 1970, track: 4, duration: 134 },
+    { name: "Alan's Psychedelic Breakfast", album: "Atom Heart Mother", year: 1970, track: 5, duration: 1223 },
+    { name: "One of These Days", album: "Meddle", year: 1971, track: 1, duration: 903 },
+    { name: "A Pillow of Winds", album: "Meddle", year: 1971, track: 2, duration: 233 },
+    { name: "Fearless", album: "Meddle", year: 1971, track: 3, duration: 284 },
+    { name: "San Tropez", album: "Meddle", year: 1971, track: 4, duration: 164 },
+    { name: "Seamus", album: "Meddle", year: 1971, track: 5, duration: 294 },
+    { name: "Echoes", album: "Meddle", year: 1971, track: 6, duration: 1423 },
+    { name: "Obscured by Clouds", album: "Obscured by Clouds", year: 1972, track: 1, duration: 255 },
+    { name: "When You're In", album: "Obscured by Clouds", year: 1972, track: 2, duration: 164 },
+    { name: "Burning Bridges", album: "A Momentary Lapse of Reason", year: 1987, track: 7, duration: 294 },
+    { name: "The Gold It's in the...", album: "Obscured by Clouds", year: 1972, track: 4, duration: 232 },
+    { name: "Wots... Uh the Deal", album: "Obscured by Clouds", year: 1972, track: 5, duration: 162 },
+    { name: "Mudmen", album: "Obscured by Clouds", year: 1972, track: 6, duration: 179 },
+    { name: "Childhood's End", album: "Obscured by Clouds", year: 1972, track: 7, duration: 262 },
+    { name: "Free Four", album: "Obscured by Clouds", year: 1972, track: 8, duration: 193 },
+    { name: "Stay", album: "Obscured by Clouds", year: 1972, track: 9, duration: 222 },
+    { name: "Absolutely Curtains", album: "Obscured by Clouds", year: 1972, track: 10, duration: 273 },
+    { name: "Speak to Me", album: "The Dark Side of the Moon", year: 1973, track: 1, duration: 90 },
+    { name: "Breathe (In the Air)", album: "The Dark Side of the Moon", year: 1973, track: 2, duration: 163 },
+    { name: "On the Run", album: "The Dark Side of the Moon", year: 1973, track: 3, duration: 215 },
+    { name: "Time", album: "The Dark Side of the Moon", year: 1973, track: 4, duration: 421 },
+    { name: "The Great Gig in the Sky", album: "The Dark Side of the Moon", year: 1973, track: 5, duration: 276 },
+    { name: "Money", album: "The Dark Side of the Moon", year: 1973, track: 6, duration: 382 },
+    { name: "Us and Them", album: "The Dark Side of the Moon", year: 1973, track: 7, duration: 462 },
+    { name: "Any Colour You Like", album: "The Dark Side of the Moon", year: 1973, track: 8, duration: 205 },
+    { name: "Brain Damage", album: "The Dark Side of the Moon", year: 1973, track: 9, duration: 228 },
+    { name: "Eclipse", album: "The Dark Side of the Moon", year: 1973, track: 10, duration: 123 },
+    { name: "Shine On You Crazy Diamond (Pts 1-5)", album: "Wish You Were Here", year: 1975, track: 1, duration: 811 },
+    { name: "Welcome to the Machine", album: "Wish You Were Here", year: 1975, track: 2, duration: 451 },
+    { name: "Have a Cigar", album: "Wish You Were Here", year: 1975, track: 3, duration: 308 },
+    { name: "Wish You Were Here", album: "Wish You Were Here", year: 1975, track: 4, duration: 334 },
+    { name: "Shine On You Crazy Diamond (Pts 6-9)", album: "Wish You Were Here", year: 1975, track: 5, duration: 751 },
+    { name: "Pigs on the Wing 1", album: "Animals", year: 1977, track: 1, duration: 125 },
+    { name: "Dogs", album: "Animals", year: 1977, track: 2, duration: 1025 },
+    { name: "Pigs (Three Different Ones)", album: "Animals", year: 1977, track: 3, duration: 686 },
+    { name: "Sheep", album: "Animals", year: 1977, track: 4, duration: 620 },
+    { name: "Pigs on the Wing 2", album: "Animals", year: 1977, track: 5, duration: 125 },
+    { name: "In the Flesh?", album: "The Wall", year: 1979, track: 1, duration: 203 },
+    { name: "The Thin Ice", album: "The Wall", year: 1979, track: 2, duration: 193 },
+    { name: "Another Brick in the Wall, Part 1", album: "The Wall", year: 1979, track: 3, duration: 251 },
+    { name: "The Happiest Days of Our Lives", album: "The Wall", year: 1979, track: 4, duration: 192 },
+    { name: "Another Brick in the Wall, Part 2", album: "The Wall", year: 1979, track: 5, duration: 213 },
+    { name: "Mother", album: "The Wall", year: 1979, track: 6, duration: 344 },
+    { name: "Goodbye Blue Sky", album: "The Wall", year: 1979, track: 7, duration: 211 },
+    { name: "Empty Spaces", album: "The Wall", year: 1979, track: 8, duration: 183 },
+    { name: "Young Lust", album: "The Wall", year: 1979, track: 9, duration: 212 },
+    { name: "One of My Turns", album: "The Wall", year: 1979, track: 10, duration: 295 },
+    { name: "Don't Leave Me Now", album: "The Wall", year: 1979, track: 11, duration: 216 },
+    { name: "Another Brick in the Wall, Part 3", album: "The Wall", year: 1979, track: 12, duration: 298 },
+    { name: "Goodbye Cruel World", album: "The Wall", year: 1979, track: 13, duration: 135 },
+    { name: "Hey You", album: "The Wall", year: 1979, track: 14, duration: 278 },
+    { name: "Is There Anybody Out There?", album: "The Wall", year: 1979, track: 15, duration: 135 },
+    { name: "Nobody Home", album: "The Wall", year: 1979, track: 16, duration: 217 },
+    { name: "Vera", album: "The Wall", year: 1979, track: 17, duration: 134 },
+    { name: "Comfortably Numb", album: "The Wall", year: 1979, track: 18, duration: 384 },
+    { name: "The Show Must Go On", album: "The Wall", year: 1979, track: 19, duration: 120 },
+    { name: "In the Flesh", album: "The Wall", year: 1979, track: 20, duration: 210 },
+    { name: "Run Like Hell", album: "The Wall", year: 1979, track: 21, duration: 223 },
+    { name: "Waiting for the Worms", album: "The Wall", year: 1979, track: 22, duration: 245 },
+    { name: "Stop", album: "The Wall", year: 1979, track: 23, duration: 84 },
+    { name: "The Trial", album: "The Wall", year: 1979, track: 24, duration: 363 },
+    { name: "Outside the Wall", album: "The Wall", year: 1979, track: 25, duration: 215 },
+    { name: "The Post War Dream", album: "The Final Cut", year: 1983, track: 1, duration: 261 },
+    { name: "Your Possible Pasts", album: "The Final Cut", year: 1983, track: 2, duration: 255 },
+    { name: "One of the Few", album: "The Final Cut", year: 1983, track: 3, duration: 263 },
+    { name: "The Hero's Return", album: "The Final Cut", year: 1983, track: 4, duration: 344 },
+    { name: "The Gunner's Dream", album: "The Final Cut", year: 1983, track: 5, duration: 367 },
+    { name: "Paranoid Eyes", album: "The Final Cut", year: 1983, track: 6, duration: 271 },
+    { name: "Get Your Filthy Hands Off My Desert", album: "The Final Cut", year: 1983, track: 7, duration: 258 },
+    { name: "The Fletcher Memorial Home", album: "The Final Cut", year: 1983, track: 8, duration: 389 },
+    { name: "Southampton Dock", album: "The Final Cut", year: 1983, track: 9, duration: 204 },
+    { name: "The Final Cut", album: "The Final Cut", year: 1983, track: 10, duration: 377 },
+    { name: "Not Now John", album: "The Final Cut", year: 1983, track: 11, duration: 246 },
+    { name: "Two Suns in the Sunset", album: "The Final Cut", year: 1983, track: 12, duration: 312 },
+    { name: "Signs of Life", album: "A Momentary Lapse of Reason", year: 1987, track: 1, duration: 278 },
+    { name: "Learning to Fly", album: "A Momentary Lapse of Reason", year: 1987, track: 2, duration: 261 },
+    { name: "The Dogs of War", album: "A Momentary Lapse of Reason", year: 1987, track: 4, duration: 258 },
+    { name: "One Slip", album: "A Momentary Lapse of Reason", year: 1987, track: 5, duration: 278 },
+    { name: "On the Turning Away", album: "A Momentary Lapse of Reason", year: 1987, track: 6, duration: 287 },
+    { name: "Yet Another Movie", album: "A Momentary Lapse of Reason", year: 1987, track: 7, duration: 741 },
+    { name: "Round and Around", album: "A Momentary Lapse of Reason", year: 1987, track: 8, duration: 339 },
+    { name: "A New Machine (Part 1)", album: "A Momentary Lapse of Reason", year: 1987, track: 9, duration: 250 },
+    { name: "A New Machine (Part 2)", album: "A Momentary Lapse of Reason", year: 1987, track: 10, duration: 229 },
+    { name: "Sorrow", album: "A Momentary Lapse of Reason", year: 1987, track: 3, duration: 285 },
+    { name: "Cluster One", album: "The Division Bell", year: 1994, track: 1, duration: 300 },
+    { name: "What Do You Want from Me", album: "The Division Bell", year: 1994, track: 2, duration: 249 },
+    { name: "Poles Apart", album: "The Division Bell", year: 1994, track: 4, duration: 340 },
+    { name: "Marooned", album: "The Division Bell", year: 1994, track: 3, duration: 516 },
+    { name: "A Great Day for Freedom", album: "The Division Bell", year: 1994, track: 5, duration: 319 },
+    { name: "Night Light", album: "The Division Bell", year: 1994, track: 6, duration: 258 },
+    { name: "Wearing the Inside Out", album: "The Division Bell", year: 1994, track: 7, duration: 435 },
+    { name: "Take It Back", album: "The Division Bell", year: 1994, track: 8, duration: 434 },
+    { name: "Coming Back to Life", album: "The Division Bell", year: 1994, track: 9, duration: 278 },
+    { name: "High Hopes", album: "The Division Bell", year: 1994, track: 10, duration: 744 },
+    { name: "Things Left Unsaid", album: "The Endless River", year: 2014, track: 1, duration: 266 },
+    { name: "It's What We Do", album: "The Endless River", year: 2014, track: 2, duration: 377 },
+    { name: "Ebb and Flow", album: "The Endless River", year: 2014, track: 3, duration: 115 },
+    { name: "Sum", album: "The Endless River", year: 2014, track: 4, duration: 288 },
+    { name: "Skins", album: "The Endless River", year: 2014, track: 5, duration: 157 },
+    { name: "Unsung", album: "The Endless River", year: 2014, track: 6, duration: 67 },
+    { name: "Anisina", album: "The Endless River", year: 2014, track: 7, duration: 196 },
+    { name: "The Lost Art of Conversation", album: "The Endless River", year: 2014, track: 8, duration: 102 },
+    { name: "On Noodle Street", album: "The Endless River", year: 2014, track: 9, duration: 102 },
+    { name: "Night Light", album: "The Endless River", year: 2014, track: 10, duration: 102 },
+    { name: "Allons-y (1)", album: "The Endless River", year: 2014, track: 11, duration: 117 },
+    { name: "Autumn '68", album: "The Endless River", year: 2014, track: 12, duration: 95 },
+    { name: "Allons-y (2)", album: "The Endless River", year: 2014, track: 13, duration: 92 },
+    { name: "Talkin' Hawkin'", album: "The Endless River", year: 2014, track: 14, duration: 209 },
+    { name: "Calling", album: "The Endless River", year: 2014, track: 15, duration: 217 },
+    { name: "Eyes to Pearls", album: "The Endless River", year: 2014, track: 16, duration: 111 },
+    { name: "Surfacing", album: "The Endless River", year: 2014, track: 17, duration: 166 },
+    { name: "Louder Than Words", album: "The Endless River", year: 2014, track: 18, duration: 396 }
+];
+
+    // Lógica para Música do Dia
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('pt-BR');
+    document.getElementById('dateDisplay').innerText = "Desafio de " + dateStr;
+
+    const seed = today.getFullYear() * 1000 + today.getMonth() * 100 + today.getDate();
+    function seededRandom(s) {
+        let x = Math.sin(s) * 10000;
+        return x - Math.floor(x);
+    }
+    const secretSong = songs[Math.floor(seededRandom(seed) * songs.length)];
+
+    let currentScore = 1000;
+    let gameOver = false;
+    let attemptsHistory = [];
+
+    // Preencher Autocomplete
+    const dl = document.getElementById('songsList');
+    songs.forEach(s => {
+        let opt = document.createElement('option');
+        opt.value = s.name;
+        dl.appendChild(opt);
+    });
+
+    function checkInput() {
+        if (gameOver) return;
+        const input = document.getElementById('guessInput');
+        const song = songs.find(s => s.name.toLowerCase() === input.value.toLowerCase());
+        if (song) {
+            processGuess(song);
+            input.value = "";
+        }
+    }
+
+    function formatTime(sec) {
+        const m = Math.floor(sec/60);
+        const s = (sec%60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    function processGuess(guess) {
+        const results = document.getElementById('results');
+        const row = document.createElement('div');
+        row.className = 'row';
+        const isCorrect = guess.name === secretSong.name;
+        
+        const compare = (f) => guess[f] === secretSong[f] ? 'correct' : 'wrong';
+        const arrow = (f) => guess[f] < secretSong[f] ? " ⬆️" : (guess[f] > secretSong[f] ? " ⬇️" : "");
+
+        let rowEmojis = "";
+        rowEmojis += (guess.album === secretSong.album) ? "🟩" : "🟥";
+        rowEmojis += (guess.year === secretSong.year) ? "🟩" : "🟥";
+        rowEmojis += (guess.track === secretSong.track) ? "🟩" : "🟥";
+        rowEmojis += (guess.duration === secretSong.duration) ? "🟩" : "🟥";
+        
+        attemptsHistory.push(rowEmojis);
+
+        row.innerHTML = `
+            <div class="box ${isCorrect ? 'correct' : ''}">${guess.name}</div>
+            <div class="box ${compare('album')}">${guess.album}</div>
+            <div class="box ${compare('year')}">${guess.year}${arrow('year')}</div>
+            <div class="box ${compare('track')}">${guess.track}${arrow('track')}</div>
+            <div class="box ${compare('duration')}">${formatTime(guess.duration)}${arrow('duration')}</div>
+        `;
+
+        results.insertBefore(row, results.firstChild);
+
+        if (isCorrect) {
+            finalizarJogo();
+        } else {
+            currentScore = Math.max(0, currentScore - 100);
+            document.getElementById('scoreValue').innerText = currentScore;
+        }
+    }
+
+    function finalizarJogo() {
+        gameOver = true;
+        document.getElementById('mainTitle').innerText = "VITORIA!";
+        document.getElementById('mainTitle').className = "victory";
+        document.getElementById('gameInputArea').style.display = "none";
+        document.getElementById('shareBtn').style.display = "inline-block";
+    }
+
+    function copiarResultado() {
+        const grid = attemptsHistory.join("\n");
+        const texto = `Pink Floyd - Qual é a música?\n${window.location.href}\nMúsica do dia ${dateStr}\nTentativas: ${attemptsHistory.length}\n${grid}\nPontuação: ${currentScore}\nConsegue bater meu recorde?`;
+        
+        navigator.clipboard.writeText(texto).then(() => {
+            const btn = document.getElementById('shareBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "Copiado! ✅";
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }).catch(err => {
+            console.error('Erro ao copiar: ', err);
+            alert("Não foi possível copiar automaticamente.");
+        });
+    }
+</script>
+</body>
+</html>
