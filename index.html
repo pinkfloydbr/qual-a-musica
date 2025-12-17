@@ -21,7 +21,6 @@
         .rainbow-bar { height: 4px; width: 100%; background: var(--rainbow); position: fixed; top: 0; left: 0; z-index: 1000; }
         .container { max-width: 800px; margin: 40px auto; position: relative; }
         
-        /* Estilo do Botão de Ajuda */
         .help-btn {
             position: absolute; top: -10px; right: 10px;
             background: none; border: 2px solid #444; color: #444;
@@ -30,7 +29,6 @@
         }
         .help-btn:hover { border-color: white; color: white; }
 
-        /* Estilo do Modal (Janela de Regras) */
         .modal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0;
             width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
@@ -140,7 +138,6 @@
     function fecharAjuda() { document.getElementById('helpModal').style.display = "none"; }
 
     const songs = [
-        // ... (Mantive sua lista de músicas idêntica ao arquivo original)
         { name: "Astronomy Domine", album: "The Piper at the Gates of Dawn", year: 1967, track: 1, duration: 252 },
         { name: "Lucifer Sam", album: "The Piper at the Gates of Dawn", year: 1967, track: 2, duration: 177 },
         { name: "Matilda Mother", album: "The Piper at the Gates of Dawn", year: 1967, track: 3, duration: 226 },
@@ -313,6 +310,32 @@
     let currentScore = 1000;
     let gameOver = false;
     let attemptsHistory = [];
+    let guessedSongsNames = []; // Nomes das músicas já tentadas hoje
+
+    // INICIALIZAÇÃO E CARREGAMENTO DO ESTADO SALVO
+    window.onload = function() {
+        // 1. Mostrar ajuda se for primeira vez
+        if (!localStorage.getItem('visitouAntes')) {
+            abrirAjuda();
+            localStorage.setItem('visitouAntes', 'true');
+        }
+
+        // 2. Carregar jogo salvo de hoje
+        const savedState = JSON.parse(localStorage.getItem('floydle_save'));
+        if (savedState && savedState.date === dateStr) {
+            currentScore = savedState.score;
+            document.getElementById('scoreValue').innerText = currentScore;
+            
+            // Re-processar cada palpite salvo
+            savedState.guesses.forEach(songName => {
+                const song = songs.find(s => s.name === songName);
+                if (song) processGuess(song, false); // false para não salvar novamente durante o loop
+            });
+        }
+    }
+
+    function abrirAjuda() { document.getElementById('helpModal').style.display = "block"; }
+    function fecharAjuda() { document.getElementById('helpModal').style.display = "none"; }
 
     const dl = document.getElementById('songsList');
     songs.forEach(s => {
@@ -326,9 +349,24 @@
         const input = document.getElementById('guessInput');
         const song = songs.find(s => s.name.toLowerCase() === input.value.toLowerCase());
         if (song) {
-            processGuess(song);
+            // Evitar duplicados no mesmo jogo
+            if(guessedSongsNames.includes(song.name)) {
+                alert("Você já tentou essa música!");
+                input.value = "";
+                return;
+            }
+            processGuess(song, true);
             input.value = "";
         }
+    }
+
+    function saveGameState() {
+        const state = {
+            date: dateStr,
+            score: currentScore,
+            guesses: guessedSongsNames
+        };
+        localStorage.setItem('floydle_save', JSON.stringify(state));
     }
 
     function formatTime(sec) {
@@ -337,7 +375,7 @@
         return `${m}:${s}`;
     }
 
-    function processGuess(guess) {
+    function processGuess(guess, shouldSave) {
         const results = document.getElementById('results');
         const row = document.createElement('div');
         row.className = 'row';
@@ -353,6 +391,7 @@
         rowEmojis += (guess.duration === secretSong.duration) ? "🟩" : "🟥";
         
         attemptsHistory.push(rowEmojis);
+        guessedSongsNames.push(guess.name);
 
         row.innerHTML = `
             <div class="box ${isCorrect ? 'correct' : ''}">${guess.name}</div>
@@ -367,9 +406,14 @@
         if (isCorrect) {
             finalizarJogo();
         } else {
-            currentScore = Math.max(0, currentScore - 100);
-            document.getElementById('scoreValue').innerText = currentScore;
+            // Se não for o carregamento inicial, reduz pontos
+            if(shouldSave) {
+                currentScore = Math.max(0, currentScore - 100);
+                document.getElementById('scoreValue').innerText = currentScore;
+            }
         }
+
+        if(shouldSave) saveGameState();
     }
 
     function finalizarJogo() {
