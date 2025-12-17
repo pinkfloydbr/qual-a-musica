@@ -41,6 +41,26 @@
             margin-top: 20px;
             display: none; /* Só aparece na vitória */
         }
+
+
+        .amz-btn {
+            display: block;
+            background: #f1c40f; /* Cor dourada que você já usa */
+            color: black !important;
+            padding: 10px 5px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: 0.3s;
+            text-align: center;
+        }
+
+        .amz-btn:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
         :root {
             --bg: #000000;
             --card: #111;
@@ -161,11 +181,19 @@
         <div>Tempo</div>
     </div>
     <div id="results"></div>
-    <div id="victoryOffer" class="amazon-offer">
-        <p style="margin: 0 0 10px 0;">🎸 <b>Complete sua coleção!</b></p>
-        <p style="font-size: 0.9rem; color: #ccc;">Camisas, Vinis e quadros do Pink Floyd com desconto na Amazon.</p>
-        <a href="SEU_LINK_DE_AFILIADO_AQUI" target="_blank" style="color: var(--gold); font-weight: bold; text-decoration: none;">Ver ofertas na Amazon →</a>
+
+    <div id="victoryOffer" class="amazon-offer" style="max-width: 500px;">
+        <p style="margin-bottom: 15px;">🎸 <b>Complete sua coleção de Pink Floyd</b></p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <a href="https://amzn.to/3YzAi9e" target="_blank" class="amz-btn" onclick="gtag('event', 'click_amazon', {'item': 'item1'})">CDs e Vinis</a>
+            <a href="https://amzn.to/459Wnif" target="_blank" class="amz-btn" onclick="gtag('event', 'click_amazon', {'item': 'item2'})">Camisetas</a>
+            <a href="https://amzn.to/4917XO2" target="_blank" class="amz-btn" onclick="gtag('event', 'click_amazon', {'item': 'item3'})">Livros e Biografias</a>
+            <a href="https://amzn.to/3L7Yyfx" target="_blank" class="amz-btn" onclick="gtag('event', 'click_amazon', {'item': 'item4'})">Quadros e Decoração</a>
     </div>
+    
+    <p style="font-size: 0.8rem; color: #666; margin-top: 15px;">Ofertas exclusivas para fãs na Amazon Brasil</p>
+</div>
 
     <footer class="ads-container">
         <p style="font-size: 10px; color: #444; margin-bottom: 5px;">ANÚNCIO</p>
