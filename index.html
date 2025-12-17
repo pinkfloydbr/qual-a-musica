@@ -13,6 +13,24 @@
     <meta charset="UTF-8">
     <title>Pink Floyd - Qual é a música?</title>
     <style>
+        /* Espaço para o banner do AdSense no rodapé */
+        .ads-container {
+            margin-top: 50px;
+            padding: 20px;
+            min-height: 90px;
+            background: #0a0a0a;
+            border-top: 1px solid #333;
+        }
+
+        /* Estilo do Card da Amazon */
+        .amazon-offer {
+            background: #222;
+            border: 1px dashed var(--gold);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none; /* Só aparece na vitória */
+        }
         :root {
             --bg: #000000;
             --card: #111;
@@ -133,6 +151,17 @@
         <div>Tempo</div>
     </div>
     <div id="results"></div>
+    <div id="victoryOffer" class="amazon-offer">
+        <p style="margin: 0 0 10px 0;">🎸 <b>Complete sua coleção!</b></p>
+        <p style="font-size: 0.9rem; color: #ccc;">Camisas, Vinis e quadros do Pink Floyd com desconto na Amazon.</p>
+        <a href="SEU_LINK_DE_AFILIADO_AQUI" target="_blank" style="color: var(--gold); font-weight: bold; text-decoration: none;">Ver ofertas na Amazon →</a>
+    </div>
+
+    <footer class="ads-container">
+        <p style="font-size: 10px; color: #444; margin-bottom: 5px;">ANÚNCIO</p>
+        <div id="adsense-slot">
+            </div>
+    </footer>
 </div>
 
 <script>
@@ -425,12 +454,25 @@
         if(shouldSave) saveGameState();
     }
 
-    function finalizarJogo() {
+    function finalizarJogo(isRealTime) {
         gameOver = true;
         document.getElementById('mainTitle').innerText = "PARABÉNS, DIAMANTE LOUCO!";
         document.getElementById('mainTitle').className = "victory";
         document.getElementById('gameInputArea').style.display = "none";
         document.getElementById('shareBtn').style.display = "inline-block";
+        
+        // MOSTRA A OFERTA DA AMAZON APÓS A VITÓRIA
+        document.getElementById('victoryOffer').style.display = "block";
+
+        if(isRealTime) {
+            saveGameState(); // Salva para o usuário não recarregar e jogar de novo
+            
+            // ENVIA O EVENTO DE VITÓRIA PARA O SEU GOOGLE ANALYTICS
+            gtag('event', 'vitoria_floydle', { 
+                'pontos': currentScore,
+                'tentativas': guessedSongsNames.length 
+            });
+        }
     }
 
     function copiarResultado() {
